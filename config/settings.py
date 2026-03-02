@@ -24,12 +24,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^r+mzg@*fc^p!59@lo*&(8sfge!nsatz$c8^_-mfhtcy8qkw=('
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'false').lower() in ['t', 'f', 'true', 'false']
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -61,8 +61,8 @@ MIDDLEWARE = [
 ]
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
@@ -88,7 +88,10 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True  # Development uchun, production da aniq origin berish kerak
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # Development uchun, production da aniq origin berish kerak
+else:
+    CORS_ALLOWED_ORIGINS = os.environ.get('DJANGO_CORS_ALLOWED_ORIGINS', '').split(',')
 
 
 ROOT_URLCONF = 'config.urls'
@@ -123,18 +126,35 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ]
 }
-WSGI_APPLICATION = 'config.wsgi.application'
+
+ASGI_APPLICATION = 'config.asgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    import urllib.parse
+
+    POSTGRES_URL = urllib.parse.urlparse(os.environ.get('DJANGO_DATABASE_URL', ''))
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': POSTGRES_URL.path.strip('/'),
+            'USER': POSTGRES_URL.username,
+            'PASSWORD': POSTGRES_URL.password,
+            'HOST': POSTGRES_URL.hostname,
+            'PORT': POSTGRES_URL.port
+        }
+    }
 
 
 # Password validation

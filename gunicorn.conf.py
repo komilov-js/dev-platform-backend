@@ -1,0 +1,20 @@
+bind = "0.0.0.0:8080"
+workers = 5
+threads = 2
+
+worker_class = "uvicorn.workers.UvicornWorker"
+accesslog = "-"
+errorlog = "-"
+loglevel = "info"
+capture_output = True
+enable_stdio_inheritance = True
+timeout = 60
+graceful_timeout = 60
+keepalive = 60
+max_requests = 5000
+max_requests_jitter = 500
+worker_connections = 1000
+limit_request_line = 0
+limit_request_fields = 100
+reload = False
+access_log_format = "%(t)s %(h)s %(u)s %(r)s %(s)s %(b)s %(D)s %(a)s"
